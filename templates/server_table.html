@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block content %}
+<table id="data" class="table table-striped">
+    <thead>
+        <tr>
+            <th>Scientific Name</th>
+            <th>Source</th>
+            <th>County</th>
+        </tr>
+    </thead>
+    <tbody>
+    </tbody>
+</table>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function () {
+        $('#data').DataTable({
+            ajax: '/api/data',
+            serverSide: true,
+            colReorder: true,
+            pageLength: 50,
+            dom: 'Bfrtip',
+            buttons: [{ extend: 'colvis', text: 'hide/show columns' }],
+            columns: [
+                { data: 'scientific_name' },
+                { data: 'source' },
+                { data: 'county' }
+            ],
+        });
+    });
+</script>
+{% endblock %}
