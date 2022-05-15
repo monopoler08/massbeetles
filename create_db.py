@@ -3,12 +3,15 @@ from author import Author
 from county import County
 from family import Family
 from genus import Genus
+from publication import Publication, PublicationsSpecies
 from record import Record
 from source import Source
 from species import Species
 from state import State
 from super_family import SuperFamily
 from sub_order import SubOrder
+from synonym import Synonym
+from common_name import CommonName
 import pandas as pd
 
 Base.metadata.create_all(engine)
@@ -36,13 +39,23 @@ df = df.melt(non_county_columns, var_name="County", value_name="Record Code").dr
 )
 
 # massage the author field and combine author+year for a source
-df["Author"] = df["Author"].str.replace("[()]", "", regex=True)
-df["Publication"] = df["Author"] + "(" + df["Year"].astype(str) + ")"
+df["AuthorSimple"] = df["Author"].str.replace("[()]", "", regex=True)
 authors = {
     name: Author(name=name)
-    for name in list(df["Author"].dropna().drop_duplicates().values)
+    for name in list(df["AuthorSimple"].dropna().drop_duplicates().values)
 }
 add_dict_to_session(authors)
+
+publications = {
+    (row["AuthorSimple"], row["Year"]): Publication(
+        year=row["Year"], author=authors[row["AuthorSimple"]]
+    )
+    for row in df[["AuthorSimple", "Year"]]
+    .dropna()
+    .drop_duplicates()
+    .to_dict("records")
+}
+add_dict_to_session(publications)
 
 sub_orders = {
     name: SubOrder(name=name)
@@ -77,7 +90,9 @@ genera = {
 add_dict_to_session(genera)
 
 species = {
-    row["Species"]: Species(name=row["Species"], genus=genera[row["Genus"]],)
+    (row["Genus"], row["Species"]): Species(
+        name=row["Species"], genus=genera[row["Genus"]],
+    )
     for row in df[["Species", "Genus"]].drop_duplicates().to_dict("records")
 }
 add_dict_to_session(species)
@@ -97,7 +112,6 @@ sources = {
         "GAB",
         "SB",
         "JWG",
-        "BG. iN",
         "CJ",
         "DCR",
         "JMC",
@@ -118,7 +132,6 @@ sources = {
         "CE",
         "RG",
         "AK",
-        "iNat",
         "JSR",
         "FB",
         "SG",
@@ -141,17 +154,62 @@ records = [
         source=sources.get(
             code.strip(), Source(name=code, year=None, person=None, url=None)
         ),
-        species=species[row["Species"]],
+        species=species[(row["Genus"], row["Species"])],
         county=counties[row["County"]],
         state=ma,
     )
-    for row in df[["Species", "County", "Record Code"]]
+    for row in df[["Genus", "Species", "County", "Record Code"]]
     .drop_duplicates()
     .to_dict("records")
     for code in row["Record Code"].split(",")
     if code.strip()
 ]
 [session.add(record) for record in records]
+
+publications_species = {}
+for row in (
+    df[["Author", "AuthorSimple", "Year", "Species", "Genus"]]
+    .dropna()
+    .drop_duplicates()
+    .to_dict("records")
+):
+    original = 0
+    # if we dropped any () from the author this means the species was renamed
+    if row["Author"] == row["AuthorSimple"]:
+        original = 1
+
+    publication = publications[(row["AuthorSimple"], row["Year"])]
+    if publication is None:
+        print(f'Error: {row["Author"]} {row["Year"]} {row["Genus"]} {row["Species"]}')
+
+    publications_species[
+        (row["AuthorSimple"], row["Year"], row["Genus"], row["Species"])
+    ] = PublicationsSpecies(
+        original=original,
+        publication=publications[(row["AuthorSimple"], row["Year"])],
+        species=species[(row["Genus"], row["Species"])],
+    )
+
+add_dict_to_session(publications_species)
+
+synonyms = [
+    Synonym(name=row["Synonyms"], species=species[(row["Genus"], row["Species"])])
+    for row in df[["Genus", "Species", "Synonyms"]]
+    .dropna()
+    .drop_duplicates()
+    .to_dict("records")
+]
+[session.add(synonym) for synonym in synonyms]
+
+# common_names = [
+#    CommonName(name=row["Common Name"], species=species[(row["Genus"], row["Species"])])
+#    for row in df[["Genus", "Species", "Common Name"]]
+#    .dropna()
+#    .drop_duplicates()
+#    .to_dict("records")
+# ]
+# [session.add(common_name) for common_name in common_names]
+
 
 session.commit()
 session.close()

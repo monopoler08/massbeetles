@@ -24,9 +24,3 @@ class Record(Base):
     def __repr__(self):
         return f"<Record species={self.species.scientific_name()}, source={self.source.name}, county={self.county.name if self.county else None}>"
 
-    def to_dict(self):
-        return {
-            "scientific_name": self.species.scientific_name(),
-            "source": self.source.name,
-            "county": self.county.name,
-        }

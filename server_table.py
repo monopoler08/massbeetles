@@ -1,16 +1,19 @@
 from flask import Flask, render_template, request
-from sqlalchemy import or_
+from sqlalchemy import or_, func
 from base import Session
 from author import Author
 from county import County
 from family import Family
 from genus import Genus
+from publication import Publication, PublicationsSpecies
 from record import Record
 from source import Source
 from species import Species
 from state import State
 from super_family import SuperFamily
 from sub_order import SubOrder
+from synonym import Synonym
+from common_name import CommonName
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///beetles.db"
@@ -26,13 +29,13 @@ def index():
 
 @app.route("/api/data")
 def data():
-    total_records = session.query(Record).count()
+    total_records = session.query(Species).count()
     query = (
-        session.query(Record)
-        .join(Record.species)
-        .join(Record.source)
-        .join(Record.county)
+        session.query(Species)
         .join(Species.genus)
+        .join(Species.records)
+        .join(Genus.family)
+        .join(Record.county)
     )
 
     # search filter
@@ -46,7 +49,7 @@ def data():
                 County.name.like(f"%{search}%"),
             )
         )
-    total_filtered = query.count()
+    total_filtered = query.group_by(Genus.name, Species.name).count()
 
     # sorting
     order = []

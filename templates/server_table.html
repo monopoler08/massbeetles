@@ -5,8 +5,16 @@
     <thead>
         <tr>
             <th>Scientific Name</th>
-            <th>Source</th>
-            <th>County</th>
+            <th>Suborder</th>
+            <th>Superfamily</th>
+            <th>Family</th>
+            <th>Genus</th>
+            <th>Species</th>
+            <th>Sources</th>
+            <th>Counties</th>
+            <th>State</th>
+            <th>Common Names</th>
+            <th>Synonyms</th>
         </tr>
     </thead>
     <tbody>
@@ -26,8 +34,16 @@
             buttons: [{ extend: 'colvis', text: 'hide/show columns' }],
             columns: [
                 { data: 'scientific_name' },
-                { data: 'source' },
-                { data: 'county' }
+                { data: 'sub_order', visible: false },
+                { data: 'super_family', visible: false },
+                { data: 'family', visible: false },
+                { data: 'genus', visible: false },
+                { data: 'species', visible: false },
+                { data: 'sources', visible: false },
+                { data: 'counties' },
+                { data: 'state', visible: false },
+                { data: 'common_names', visible: false },
+                { data: 'synonyms', visible: false }
             ],
         });
     });
