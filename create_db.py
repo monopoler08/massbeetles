@@ -13,6 +13,7 @@ from sub_order import SubOrder
 from synonym import Synonym
 from common_name import CommonName
 import pandas as pd
+import numpy as np
 
 Base.metadata.create_all(engine)
 
@@ -23,23 +24,18 @@ def add_dict_to_session(data):
     [session.add(item) for item in data.values()]
 
 
-df = pd.read_csv("beetles.csv")[:-5]
-
+df = pd.read_csv("beetles.csv")
 
 ma = State(name="Massachusetts", abbreviation="MA")
 session.add(ma)
 
 counties = {county: County(name=county, state=ma) for county in County.ma_counties}
+counties["null"] = County(name="null", state=ma)
+null_county = counties["null"]
 [session.add(county) for county in counties.values()]
 
-# melt county info
-non_county_columns = list(set(df.columns) - set(County.ma_counties))
-df = df.melt(non_county_columns, var_name="County", value_name="Record Code").dropna(
-    subset=["Record Code"]
-)
-
 # massage the author field and combine author+year for a source
-df["AuthorSimple"] = df["Author"].str.replace("[()]", "", regex=True)
+df["AuthorSimple"] = df["Author"].str.replace(r"[()]", "", regex=True)
 authors = {
     name: Author(name=name)
     for name in list(df["AuthorSimple"].dropna().drop_duplicates().values)
@@ -91,9 +87,9 @@ add_dict_to_session(genera)
 
 species = {
     (row["Genus"], row["Species"]): Species(
-        name=row["Species"], genus=genera[row["Genus"]],
+        name=row["Species"], notes=row["Notes"], genus=genera[row["Genus"]],
     )
-    for row in df[["Species", "Genus"]].drop_duplicates().to_dict("records")
+    for row in df[["Species", "Genus", "Notes"]].drop_duplicates().to_dict("records")
 }
 add_dict_to_session(species)
 
@@ -145,26 +141,50 @@ sources = {
         "JW",
         "CM",
         "AR",
+        "TM",
     )
 }
 add_dict_to_session(sources)
 
-records = [
-    Record(
-        source=sources.get(
-            code.strip(), Source(name=code, year=None, person=None, url=None)
-        ),
-        species=species[(row["Genus"], row["Species"])],
-        county=counties[row["County"]],
-        state=ma,
-    )
-    for row in df[["Genus", "Species", "County", "Record Code"]]
-    .drop_duplicates()
-    .to_dict("records")
-    for code in row["Record Code"].split(",")
-    if code.strip()
-]
-[session.add(record) for record in records]
+# county data
+for row in (
+    df[["Genus", "Species"] + County.ma_counties].drop_duplicates().to_dict("records")
+):
+    for county in County.ma_counties:
+        if str(row[county]) == row[county]:
+            for code in str(row[county]).split(","):
+                if code.strip():
+                    session.add(
+                        Record(
+                            source=sources.get(
+                                code.strip(),
+                                Source(name=code, year=None, person=None, url=None),
+                            ),
+                            species=species[(row["Genus"], row["Species"])],
+                            county=counties[county],
+                            state=ma,
+                        )
+                    )
+
+other_columns = ["MA", "Bugguide", "Tom Murray", "JFO"]
+for row in (
+    df[["Genus", "Species"] + other_columns].drop_duplicates().to_dict("records")
+):
+    for column in other_columns:
+        if str(row[column]) == row[column]:
+            for code in str(row[column]).split(","):
+                if code.strip():
+                    session.add(
+                        Record(
+                            source=sources.get(
+                                code.strip(),
+                                Source(name=code, year=None, person=None, url=None),
+                            ),
+                            species=species[(row["Genus"], row["Species"])],
+                            county=null_county,
+                            state=ma,
+                        )
+                    )
 
 publications_species = {}
 for row in (

@@ -41,5 +41,5 @@ statement = (
 # for row in session.execute(statement):
 #    print(row)
 
-for record in session.query(Record).all():
-    print(record.species.sci_name_with_author())
+for row in session.query(Species).all():
+    print(", ".join(record.county.name for record in row.records))

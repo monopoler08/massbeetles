@@ -24,7 +24,7 @@ session = Session()
 
 @app.route("/")
 def index():
-    return render_template("server_table.html", title="Beetles of Massachusetts")
+    return render_template("server_table.html", title="MassBeetles")
 
 
 @app.route("/api/data")
@@ -35,7 +35,6 @@ def data():
         .join(Species.genus)
         .join(Species.records)
         .join(Genus.family)
-        .join(Record.county)
     )
 
     # search filter

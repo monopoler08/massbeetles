@@ -4,17 +4,14 @@
 <table id="data" class="table table-striped">
     <thead>
         <tr>
-            <th>Scientific Name</th>
-            <th>Suborder</th>
-            <th>Superfamily</th>
             <th>Family</th>
-            <th>Genus</th>
-            <th>Species</th>
-            <th>Sources</th>
-            <th>Counties</th>
-            <th>State</th>
+            <th>Scientific Name</th>
             <th>Common Names</th>
+            <th>Genus</th>
+            <th>Sources</th>
+            <th>Known County Records</th>
             <th>Synonyms</th>
+            <th>Notes</th>
         </tr>
     </thead>
     <tbody>
@@ -33,17 +30,14 @@
             dom: 'Bfrtip',
             buttons: [{ extend: 'colvis', text: 'hide/show columns' }],
             columns: [
+                { data: 'family' },
                 { data: 'scientific_name' },
-                { data: 'sub_order', visible: false },
-                { data: 'super_family', visible: false },
-                { data: 'family', visible: false },
+                { data: 'common_names' },
                 { data: 'genus', visible: false },
-                { data: 'species', visible: false },
                 { data: 'sources', visible: false },
-                { data: 'counties' },
-                { data: 'state', visible: false },
-                { data: 'common_names', visible: false },
-                { data: 'synonyms', visible: false }
+                { data: 'counties', visible: false },
+                { data: 'synonyms', visible: false },
+                { data: 'notes', visible: false }
             ],
         });
     });
