@@ -18,8 +18,9 @@ class CommonName(Base):
         "Species", secondary=common_names_species_association, backref="common_names"
     )
 
-    def __init__(self, name):
+    def __init__(self, name, species):
         self.name = name
+        self.species = species
 
     def __repr__(self):
         return f"<CommonName name={self.name}>"

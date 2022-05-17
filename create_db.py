@@ -213,22 +213,25 @@ for row in (
 add_dict_to_session(publications_species)
 
 synonyms = [
-    Synonym(name=row["Synonyms"], species=species[(row["Genus"], row["Species"])])
+    Synonym(name=synonym.strip(), species=species[(row["Genus"], row["Species"])])
     for row in df[["Genus", "Species", "Synonyms"]]
     .dropna()
     .drop_duplicates()
     .to_dict("records")
+    for synonym in row["Synonyms"].split(",")
 ]
 [session.add(synonym) for synonym in synonyms]
 
-# common_names = [
-#    CommonName(name=row["Common Name"], species=species[(row["Genus"], row["Species"])])
-#    for row in df[["Genus", "Species", "Common Name"]]
-#    .dropna()
-#    .drop_duplicates()
-#    .to_dict("records")
-# ]
-# [session.add(common_name) for common_name in common_names]
+common_names = [
+    CommonName(
+        name=row["Common Name"], species=[species[(row["Genus"], row["Species"])]]
+    )
+    for row in df[["Genus", "Species", "Common Name"]]
+    .dropna()
+    .drop_duplicates()
+    .to_dict("records")
+]
+[session.add(common_name) for common_name in common_names]
 
 
 session.commit()

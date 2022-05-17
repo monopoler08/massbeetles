@@ -4,42 +4,44 @@ from author import Author
 from county import County
 from family import Family
 from genus import Genus
+from publication import Publication, PublicationsSpecies
 from record import Record
 from source import Source
 from species import Species
-from publication import Publication, PublicationsSpecies
 from state import State
 from super_family import SuperFamily
 from sub_order import SubOrder
-
+from synonym import Synonym
+from common_name import CommonName
+import pandas as pd
 from sqlalchemy.orm import configure_mappers
 
 session = Session()
 configure_mappers()
 
-statement = (
-    select(
-        Genus.name,
-        Species.name,
-        Source.name,
-        County.name,
-        PublicationsSpecies.original,
-        Author.name,
-        Publication.year,
-    )
-    .select_from(Record)
-    .join(Record.species)
+df = pd.read_csv("beetles.csv")
+
+csv_species_list = set(df["Scientific Name"].values.tolist())
+
+db_species = (
+    session.query(Species)
     .join(Species.genus)
-    .join(Record.source)
-    .join(Record.county)
-    .join(Species.publications_species)
-    .join(PublicationsSpecies.publication)
-    .join(Publication.author)
-    .order_by(Genus.name, Species.name, Source.name, County.name)
+    .join(Species.records)
+    .outerjoin(Species.synonyms)
+    .outerjoin(Species.common_names)
+    .join(Genus.family)
+    .outerjoin(Species.publications_species)
+    .outerjoin(PublicationsSpecies.publication)
+    .outerjoin(Publication.author)
+    .group_by(Species)
+    .all()
 )
 
-# for row in session.execute(statement):
-#    print(row)
+db_species_list = set([species.scientific_name() for species in db_species])
 
-for row in session.query(Species).all():
-    print(", ".join(record.county.name for record in row.records))
+difflist = list(csv_species_list - db_species_list)
+
+difflist.sort()
+
+print(df[["Family", "Scientific Name"]][df["Scientific Name"].isin(difflist)])
+

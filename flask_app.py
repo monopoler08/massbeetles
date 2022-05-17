@@ -29,13 +29,21 @@ def index():
 
 @app.route("/api/data")
 def data():
-    total_records = session.query(Species).count()
     query = (
         session.query(Species)
         .join(Species.genus)
         .join(Species.records)
+        .outerjoin(Species.synonyms)
+        .outerjoin(Species.common_names)
+        .outerjoin(Record.county)
+        .outerjoin(Record.source)
         .join(Genus.family)
+        .outerjoin(Species.publications_species)
+        .outerjoin(PublicationsSpecies.publication)
+        .outerjoin(Publication.author)
+        .group_by(Species)
     )
+    total_records = query.count()
 
     # search filter
     search = request.args.get("search[value]")
@@ -46,31 +54,41 @@ def data():
                 Genus.name.like(f"%{search}%"),
                 Source.name.like(f"%{search}%"),
                 County.name.like(f"%{search}%"),
+                Family.name.like(f"%{search}%"),
+                Synonym.name.like(f"%{search}%"),
+                Source.name.like(f"%{search}%"),
+                Species.notes.like(f"%{search}%"),
+                CommonName.name.like(f"%{search}%"),
             )
         )
-    total_filtered = query.group_by(Genus.name, Species.name).count()
+    total_filtered = query.count()
 
     # sorting
     order = []
     i = 0
     while True:
+        col = []
         col_index = request.args.get(f"order[{i}][column]")
         if col_index is None:
+            if not order:
+                col.append(getattr(Genus, "name"))
+                col.append(getattr(Species, "name"))
             break
         col_name = request.args.get(f"columns[{col_index}][data]")
-        if col_name not in ["species", "source", "state", "county"]:
-            col_name = "species"
+        if col_name not in ["species", "genus", "family", "author"]:
+            col_name = "scientific_name"
         descending = request.args.get(f"order[{i}][dir]") == "desc"
-        if col_name == "species":
-            col = getattr(Species, "name")
-        elif col_name == "source":
-            col = getattr(Source, "name")
-        elif col_name == "county":
-            col = getattr(County, "name")
+        if col_name == "scientific_name":
+            col.append(getattr(Genus, "name"))
+            col.append(getattr(Species, "name"))
+        elif col_name == "genus":
+            col.append(getattr(Genus, "name"))
+        elif col_name == "family":
+            col.append(getattr(Family, "name"))
 
         if descending:
-            col = col.desc()
-        order.append(col)
+            col = [c.desc() for c in col]
+        order.extend(col)
         i += 1
     if order:
         query = query.order_by(*order)

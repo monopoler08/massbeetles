@@ -32,12 +32,12 @@
             columns: [
                 { data: 'family' },
                 { data: 'scientific_name' },
-                { data: 'common_names' },
+                { data: 'common_names', orderable: false },
                 { data: 'genus', visible: false },
-                { data: 'sources', visible: false },
-                { data: 'counties', visible: false },
-                { data: 'synonyms', visible: false },
-                { data: 'notes', visible: false }
+                { data: 'sources', visible: false, orderable: false },
+                { data: 'counties', visible: false, orderable: false },
+                { data: 'synonyms', visible: false, orderable: false },
+                { data: 'notes', visible: false, orderable: false }
             ],
         });
     });
