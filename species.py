@@ -42,9 +42,9 @@ class Species(Base):
         county_list = list(
             set(
                 [
-                    record.county.name
+                    record.county.abbreviation
                     for record in self.records
-                    if record.county.name != "null"
+                    if record.county.abbreviation != "null"
                 ]
             )
         )

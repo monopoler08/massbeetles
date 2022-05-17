@@ -29,8 +29,13 @@ df = pd.read_csv("beetles.csv")
 ma = State(name="Massachusetts", abbreviation="MA")
 session.add(ma)
 
-counties = {county: County(name=county, state=ma) for county in County.ma_counties}
-counties["null"] = County(name="null", state=ma)
+counties = {
+    county["name"]: County(
+        name=county["name"], abbreviation=county["abbreviation"], state=ma
+    )
+    for county in County.ma_counties
+}
+counties["null"] = County(name="null", abbreviation="null", state=ma)
 null_county = counties["null"]
 [session.add(county) for county in counties.values()]
 
@@ -146,11 +151,10 @@ sources = {
 }
 add_dict_to_session(sources)
 
+ma_counties = [c["name"] for c in County.ma_counties]
 # county data
-for row in (
-    df[["Genus", "Species"] + County.ma_counties].drop_duplicates().to_dict("records")
-):
-    for county in County.ma_counties:
+for row in df[["Genus", "Species"] + ma_counties].drop_duplicates().to_dict("records"):
+    for county in ma_counties:
         if str(row[county]) == row[county]:
             for code in str(row[county]).split(","):
                 if code.strip():
