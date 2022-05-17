@@ -5,9 +5,9 @@
     <thead>
         <tr>
             <th>Family</th>
+            <th>Genus</th>
             <th>Scientific Name</th>
             <th>Common Name</th>
-            <th>Genus</th>
             <th>Sources</th>
             <th>Known County Records</th>
             <th>Synonyms</th>
@@ -31,9 +31,9 @@
             buttons: [{ extend: 'colvis', text: 'hide/show columns' }],
             columns: [
                 { data: 'family' },
+                { data: 'genus', visible: false },
                 { data: 'scientific_name' },
                 { data: 'common_names', orderable: false },
-                { data: 'genus', visible: false },
                 { data: 'sources', visible: false, orderable: false },
                 { data: 'counties', visible: false, orderable: false },
                 { data: 'synonyms', visible: false, orderable: false },

@@ -58,7 +58,7 @@ class Species(Base):
             "scientific_name": self.sci_name_with_author(),
             "common_names": ", ".join(common_names_list),
             "species": self.name,
-            "genus": self.genus.name,
+            "genus": "<i>" + self.genus.name + "</i>",
             "super_family": self.genus.family.super_family.name,
             "sub_order": self.genus.family.super_family.sub_order.name,
             "counties": ", ".join(county_list),
