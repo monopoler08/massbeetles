@@ -29,12 +29,13 @@ db_species = (
     .join(Species.records)
     .outerjoin(Species.synonyms)
     .outerjoin(Species.common_names)
+    .outerjoin(Record.county)
+    .outerjoin(Record.source)
     .join(Genus.family)
     .outerjoin(Species.publications_species)
     .outerjoin(PublicationsSpecies.publication)
     .outerjoin(Publication.author)
     .group_by(Species)
-    .all()
 )
 
 db_species_list = set([species.scientific_name() for species in db_species])
@@ -42,6 +43,6 @@ db_species_list = set([species.scientific_name() for species in db_species])
 difflist = list(csv_species_list - db_species_list)
 
 difflist.sort()
-
+print(difflist)
 print(df[["Family", "Scientific Name"]][df["Scientific Name"].isin(difflist)])
 
