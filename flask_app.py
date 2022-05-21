@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, url_for
 from sqlalchemy import or_, func
 from base import Session
 from author import Author
