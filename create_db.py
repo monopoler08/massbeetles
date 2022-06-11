@@ -1,4 +1,4 @@
-from base import Session, engine, Base
+from models.base import Session, engine, Base
 from author import Author
 from county import County
 from family import Family

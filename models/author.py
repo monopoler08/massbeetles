@@ -1,10 +1,10 @@
 from sqlalchemy import Column, String, Integer, ForeignKey
 from sqlalchemy.orm import relationship, backref
-from base import Base
+from models.base import Base
 
 
-class SubOrder(Base):
-    __tablename__ = "sub_orders"
+class Author(Base):
+    __tablename__ = "authors"
     id = Column(Integer, primary_key=True)
     name = Column(String)
 
@@ -12,4 +12,4 @@ class SubOrder(Base):
         self.name = name
 
     def __repr__(self):
-        return f"<SubOrder name={self.name}>"
+        return f"<Author {self.name=}>"

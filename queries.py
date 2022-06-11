@@ -1,5 +1,5 @@
 from sqlalchemy import select, func
-from base import Session
+from models.base import Session
 from author import Author
 from county import County
 from family import Family
@@ -46,3 +46,17 @@ difflist.sort()
 print(difflist)
 print(df[["Family", "Scientific Name"]][df["Scientific Name"].isin(difflist)])
 
+gcount = { count_tuple[0]:count_tuple[1] for count_tuple in session.query(Genus.name,func.count(Species.genus)).join(Species.genus).group_by(Genus.name).all() }
+
+gcount_sp_only = { count_tuple[0]:count_tuple[1] for count_tuple in session.query(Genus.name,func.count(Species.genus)).join(Species.genus).filter(Species.name.in_(['sp.'])).group_by(Genus.name).all() }
+
+total = 0
+for genus in gcount.keys():
+    if gcount[genus] == gcount_sp_only.get(genus,0):
+        gcount[genus] = 1
+    else:
+        gcount[genus] = gcount[genus] - gcount_sp_only.get(genus,0)
+    total = total + gcount[genus]
+    print(f'{genus},{gcount[genus]}')
+
+print(total)

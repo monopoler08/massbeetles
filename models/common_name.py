@@ -1,6 +1,6 @@
 from sqlalchemy import Column, String, Integer, Table, ForeignKey
 from sqlalchemy.orm import relationship, backref
-from base import Base
+from models.base import Base
 
 common_names_species_association = Table(
     "common_names_species",

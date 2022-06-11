@@ -1,7 +1,7 @@
 from sqlalchemy import Column, String, Integer, ForeignKey
 from sqlalchemy_utils import aggregated
 from sqlalchemy.orm import relationship, backref
-from base import Base
+from models.base import Base
 
 
 class Species(Base):
