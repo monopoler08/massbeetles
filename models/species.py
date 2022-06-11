@@ -20,8 +20,12 @@ class Species(Base):
     def scientific_name(self):
         return f"{self.genus.name} {self.name}"
 
-    def sci_name_with_author(self):
-        basename = "<i>" + self.scientific_name() + "</i>"
+    def italicized_sci_name_with_author(self):
+        basename = "<i>" + self.genus.name
+        if self.name == "sp.":
+            basename = basename + "</i> " + self.name
+        else:
+            basename = basename + " " + self.name + "</i>"
         author_strings = []
         for ps in self.publications_species:
             author_string = f"{ps.publication.author.name} {ps.publication.year}"
@@ -29,7 +33,10 @@ class Species(Base):
                 author_string = "(" + author_string + ")"
             author_strings.append(author_string)
 
-        return basename + " " + ", ".join(author_strings)
+        if author_strings:
+            basename = basename + " " + ", ".join(author_strings)
+
+        return basename
 
     def __repr__(self):
         return f"<Species name={self.name}, genus={self.genus.name}>"
@@ -55,7 +62,7 @@ class Species(Base):
         common_names_list.sort()
         return {
             "family": self.genus.family.name,
-            "scientific_name": self.sci_name_with_author(),
+            "scientific_name": self.italicized_sci_name_with_author(),
             "common_names": ", ".join(common_names_list),
             "species": self.name,
             "genus": "<i>" + self.genus.name + "</i>",

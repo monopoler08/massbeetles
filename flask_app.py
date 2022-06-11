@@ -86,6 +86,7 @@ def data():
         elif col_name == "family":
             col.append(getattr(Family, "name"))
 
+        col = [func.lower(c) for c in col]
         if descending:
             col = [c.desc() for c in col]
         order.extend(col)
