@@ -25,7 +25,14 @@ session = Session()
 @app.route("/")
 def index():
     records = len(all_record_query().all())
-    species = len({record[0] for record in session.query(Species.name).all()})
+    species = len(
+        {
+            record[0]
+            for record in session.query(Species.name).all()
+            if record[0][0:3] != "sp."
+        }
+    )
+
     families = len({record[0] for record in session.query(Family.name).all()})
 
     return render_template(
