@@ -24,11 +24,21 @@ session = Session()
 
 @app.route("/")
 def index():
-    return render_template("server_table.html", title="MassBeetles")
+    all_records = all_record_query()
+    records = all_records.count()
+    species = len({record.to_dict()["species"] for record in all_records})
+    families = len({record.to_dict()["family"] for record in all_records})
+
+    return render_template(
+        "server_table.html",
+        title="MassBeetles",
+        records=records,
+        species=species,
+        families=families,
+    )
 
 
-@app.route("/api/data")
-def data():
+def all_record_query():
     query = (
         session.query(Species)
         .join(Species.genus)
@@ -43,6 +53,12 @@ def data():
         .outerjoin(Publication.author)
         .group_by(Species)
     )
+    return query
+
+
+@app.route("/api/data")
+def data():
+    query = all_record_query()
     total_records = query.count()
 
     # search filter

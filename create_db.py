@@ -1,17 +1,17 @@
 from models.base import Session, engine, Base
-from author import Author
-from county import County
-from family import Family
-from genus import Genus
-from publication import Publication, PublicationsSpecies
-from record import Record
-from source import Source
-from species import Species
-from state import State
-from super_family import SuperFamily
-from sub_order import SubOrder
-from synonym import Synonym
-from common_name import CommonName
+from models.author import Author
+from models.county import County
+from models.family import Family
+from models.genus import Genus
+from models.publication import Publication, PublicationsSpecies
+from models.record import Record
+from models.source import Source
+from models.species import Species
+from models.state import State
+from models.super_family import SuperFamily
+from models.sub_order import SubOrder
+from models.synonym import Synonym
+from models.common_name import CommonName
 import pandas as pd
 import numpy as np
 
