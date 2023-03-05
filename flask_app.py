@@ -14,6 +14,9 @@ from models.super_family import SuperFamily
 from models.sub_order import SubOrder
 from models.synonym import Synonym
 from models.common_name import CommonName
+import pathlib
+from datetime import datetime
+import calendar
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///beetles.db"
@@ -24,6 +27,8 @@ session = Session()
 
 @app.route("/")
 def index():
+    modtime = datetime.fromtimestamp(pathlib.Path("beetles.db").stat().st_mtime)
+    mtime = f"{calendar.month_name[modtime.month]} {modtime.day}, {modtime.year}"
     records = len(all_record_query().all())
     species = len(
         {
@@ -41,6 +46,7 @@ def index():
         records=records,
         species=species,
         families=families,
+        mtime=mtime,
     )
 
 
