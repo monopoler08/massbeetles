@@ -30,14 +30,21 @@ def index():
     modtime = datetime.fromtimestamp(pathlib.Path("beetles.db").stat().st_mtime)
     mtime = f"{calendar.month_name[modtime.month]} {modtime.day}, {modtime.year}"
     records = len(all_record_query().all())
-    species = len(
-        {
-            record[0]
-            for record in session.query(Species.name).all()
-            if record[0][0:3] != "sp."
-        }
-    )
+    species_count_by_genus = dict()
+    for record in session.query(Species).join(Species.genus).all():
+        if record.name[0:3] != "sp.":
+            species_count_by_genus[record.genus.name] = (
+                species_count_by_genus.get(record.genus.name, 0) + 1
+            )
 
+    for record in session.query(Species).join(Species.genus).all():
+        if (
+            record.name[0:3] == "sp."
+            and record.genus.name not in species_count_by_genus.keys()
+        ):
+            species_count_by_genus[record.genus.name] = 1
+
+    species = count_unique_species()
     families = len({record[0] for record in session.query(Family.name).all()})
 
     return render_template(
@@ -48,6 +55,25 @@ def index():
         families=families,
         mtime=mtime,
     )
+
+
+def count_unique_species():
+    """Species with an epitewhatever beginning with a 'sp.' don't count unless there are no other records for a genus"""
+    species_count_by_genus = dict()
+    for record in session.query(Species).join(Species.genus).all():
+        if record.name[0:3] != "sp.":
+            species_count_by_genus[record.genus.name] = (
+                species_count_by_genus.get(record.genus.name, 0) + 1
+            )
+
+    for record in session.query(Species).join(Species.genus).all():
+        if (
+            record.name[0:3] == "sp."
+            and record.genus.name not in species_count_by_genus.keys()
+        ):
+            species_count_by_genus[record.genus.name] = 1
+
+    return sum(species_count_by_genus.values())
 
 
 def all_record_query():
