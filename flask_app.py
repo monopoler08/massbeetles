@@ -46,22 +46,25 @@ def index():
 def count_unique_species():
     """Species with an epitewhatever beginning with a 'sp.' don't count unless there are no other records for a genus"""
     species_count_by_genus = dict()
-    genus_has_sp = dict()
+    sp_in_genus = dict()
     for record in session.query(Species).join(Species.genus).all():
         if record.name[0:3] != "sp.":
-            if record.genus.name in genus_has_sp.keys():
-                genus_has_sp.pop(record.genus.name)
-                species_count_by_genus[record.genus.name] = 1
-            else:
-                species_count_by_genus[record.genus.name] = (
-                    species_count_by_genus.get(record.genus.name, 0) + 1
-                )
+            species_count_by_genus[record.genus.name] = (
+                species_count_by_genus.get(record.genus.name, 0) + 1
+            )
         else:
-            if record.genus.name not in genus_has_sp.keys():
-                genus_has_sp[record.genus.name] = 1
-                species_count_by_genus[record.genus.name] = 1
+            sp_in_genus[record.genus.name] = 1
 
-    return sum(species_count_by_genus.values())
+    base_count = sum(species_count_by_genus.values())
+    additional_sp_count = sum(
+        [
+            value
+            for key, value in sp_in_genus.items()
+            if key not in species_count_by_genus.keys()
+        ]
+    )
+
+    return base_count + additional_sp_count
 
 
 def all_record_query():
