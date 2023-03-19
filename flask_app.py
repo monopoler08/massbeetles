@@ -29,9 +29,13 @@ session = Session()
 def index():
     modtime = datetime.fromtimestamp(pathlib.Path("beetles.db").stat().st_mtime)
     mtime = f"{calendar.month_name[modtime.month]} {modtime.day}, {modtime.year}"
-    records = len(all_record_query().all())
-    species = count_unique_species()
-    families = len({record[0] for record in session.query(Family.name).all()})
+    #    records = len(all_record_query().all())
+    #    species = count_unique_species()
+    #    families = len({record[0] for record in session.query(Family.name).all()})
+
+    records = 3432
+    species = 3099
+    families = 95
 
     return render_template(
         "server_table.html",
