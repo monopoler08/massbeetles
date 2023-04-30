@@ -1,9 +1,12 @@
-from models.base import Session, engine, Base
+from sqlalchemy import select, func, create_engine, MetaData
+from sqlalchemy.orm import Session
+from models.base import Base
 from models.author import Author
 from models.county import County
 from models.family import Family
 from models.genus import Genus
-from models.publication import Publication, PublicationsSpecies
+from models.publication import Publication
+from models.publications_species import PublicationsSpecies
 from models.record import Record
 from models.source import Source
 from models.species import Species
@@ -15,9 +18,10 @@ from models.common_name import CommonName
 import pandas as pd
 import numpy as np
 
+engine = create_engine("sqlite:///beetles.db", echo=True)
 Base.metadata.create_all(engine)
 
-session = Session()
+session = Session(engine)
 
 
 def add_dict_to_session(data):
@@ -25,6 +29,7 @@ def add_dict_to_session(data):
 
 
 df = pd.read_csv("beetles.csv")
+sources_df = pd.read_csv("sources.csv")
 
 ma = State(name="Massachusetts", abbreviation="MA")
 session.add(ma)
@@ -41,9 +46,10 @@ null_county = counties["null"]
 
 # massage the author field and combine author+year for a source
 df["AuthorSimple"] = df["Author"].str.replace(r"[()]", "", regex=True)
+
 authors = {
     name: Author(name=name)
-    for name in list(df["AuthorSimple"].dropna().drop_duplicates().values)
+    for name in df["AuthorSimple"].dropna().drop_duplicates().values.tolist()
 }
 add_dict_to_session(authors)
 
@@ -65,16 +71,18 @@ sub_orders = {
 add_dict_to_session(sub_orders)
 
 null_suborder = SubOrder(name="NA")
+null_super_family = SuperFamily(name="NA", sub_order=null_suborder)
+
 super_families = {
     row["Superfamily"]: SuperFamily(
-        name=row["Superfamily"],
+        name=row["Superfamily"] if row["Superfamily"] else null_super_family,
         sub_order=sub_orders.get(row["Suborder"], null_suborder),
     )
     for row in df[["Superfamily", "Suborder"]].drop_duplicates().to_dict("records")
+    if row["Superfamily"] == row["Superfamily"]
 }
 add_dict_to_session(super_families)
 
-null_super_family = SuperFamily(name="NA", sub_order=null_suborder)
 families = {
     row["Family"]: Family(
         name=row["Family"],
@@ -85,68 +93,35 @@ families = {
 add_dict_to_session(families)
 
 genera = {
-    row["Genus"]: Genus(name=row["Genus"], family=families[row["Family"]],)
+    row["Genus"]: Genus(
+        name=row["Genus"],
+        family=families[row["Family"]],
+    )
     for row in df[["Genus", "Family"]].drop_duplicates().to_dict("records")
 }
 add_dict_to_session(genera)
 
 species = {
     (row["Genus"], row["Species"]): Species(
-        name=row["Species"], notes=row["Notes"], genus=genera[row["Genus"]],
+        name=row["Species"],
+        notes=row["Notes"],
+        genus=genera[row["Genus"]],
     )
     for row in df[["Species", "Genus", "Notes"]].drop_duplicates().to_dict("records")
 }
 add_dict_to_session(species)
 
 sources = {
-    code: Source(name=code, year=None, person=None, url=None)
-    for code in (
-        "BG",
-        "MCZ",
-        "TKH",
-        "iN",
-        "KM",
-        "JFO",
-        "PB",
-        "VV",
-        "RN",
-        "GAB",
-        "SB",
-        "JWG",
-        "CJ",
-        "DCR",
-        "JMC",
-        "xx",
-        "TS",
-        "PM",
-        "NAPPO",
-        "FFP",
-        "BZ",
-        "GS",
-        "TM",
-        "MBF",
-        "KC",
-        "MP",
-        "G/S",
-        "WTB",
-        "IN",
-        "CE",
-        "RG",
-        "AK",
-        "JSR",
-        "FB",
-        "SG",
-        "IDT",
-        "CAF",
-        "JAY",
-        "BD",
-        "TC",
-        "HD",
-        "LS",
-        "JW",
-        "CM",
-        "AR",
-        "TM",
+    source.Abbreviation: Source(
+        name=source.Abbreviation,
+        year=source.Date,
+        person=source.Author,
+        url=source.URL,
+        journal=source.Journal,
+        volume=source.Vol,
+    )
+    for source in list(
+        sources_df.rename(columns={"Vol/Pages": "Vol"}).itertuples(index=False)
     )
 }
 add_dict_to_session(sources)
@@ -162,7 +137,14 @@ for row in df[["Genus", "Species"] + ma_counties].drop_duplicates().to_dict("rec
                         Record(
                             source=sources.get(
                                 code.strip(),
-                                Source(name=code, year=None, person=None, url=None),
+                                Source(
+                                    name=code,
+                                    year=None,
+                                    person=None,
+                                    url=None,
+                                    journal=None,
+                                    volume=None,
+                                ),
                             ),
                             species=species[(row["Genus"], row["Species"])],
                             county=counties[county],
@@ -182,7 +164,14 @@ for row in (
                         Record(
                             source=sources.get(
                                 code.strip(),
-                                Source(name=code, year=None, person=None, url=None),
+                                Source(
+                                    name=code,
+                                    year=None,
+                                    person=None,
+                                    url=None,
+                                    journal=None,
+                                    volume=None,
+                                ),
                             ),
                             species=species[(row["Genus"], row["Species"])],
                             county=null_county,
@@ -205,16 +194,16 @@ for row in (
     publication = publications[(row["AuthorSimple"], row["Year"])]
     if publication is None:
         print(f'Error: {row["Author"]} {row["Year"]} {row["Genus"]} {row["Species"]}')
+    else:
+        publications_species[
+            (row["AuthorSimple"], row["Year"], row["Genus"], row["Species"])
+        ] = PublicationsSpecies(
+            original=original,
+            publication=publication,
+            species=species[(row["Genus"], row["Species"])],
+        )
 
-    publications_species[
-        (row["AuthorSimple"], row["Year"], row["Genus"], row["Species"])
-    ] = PublicationsSpecies(
-        original=original,
-        publication=publications[(row["AuthorSimple"], row["Year"])],
-        species=species[(row["Genus"], row["Species"])],
-    )
-
-add_dict_to_session(publications_species)
+# add_dict_to_session(publications_species)
 
 synonyms = [
     Synonym(name=synonym.strip(), species=species[(row["Genus"], row["Species"])])
@@ -240,4 +229,3 @@ common_names = [
 
 session.commit()
 session.close()
-

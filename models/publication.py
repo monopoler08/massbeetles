@@ -1,39 +1,31 @@
-from sqlalchemy import Column, String, Integer, ForeignKey, Table
-from sqlalchemy.orm import relationship, backref
+from typing import List
+from sqlalchemy import String
+from sqlalchemy import Integer
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import Mapped
+from sqlalchemy.orm import mapped_column
+from sqlalchemy.orm import relationship
 from models.base import Base
-
-
-class PublicationsSpecies(Base):
-    __tablename__ = "publications_species"
-    id = Column(Integer, primary_key=True)
-    original = Column(Integer)
-    publication_id = Column(ForeignKey("publications.id"))
-    species_id = Column(ForeignKey("species.id"))
-    publication = relationship("Publication", backref=backref("publications_species"))
-    species = relationship("Species", backref=backref("publications_species"))
-
-    def __init__(self, original, publication, species):
-        if not publication:
-            raise (ValueError)
-        self.original = original
-        self.publication = publication
-        self.species = species
-
-    def __repr__(self):
-        return f"<PublicationSpecies id={self.id} publication_id={self.publication_id} species_id={self.species_id}>"
 
 
 class Publication(Base):
     __tablename__ = "publications"
-    id = Column(Integer, primary_key=True)
-    name = Column(String)
-    year = Column(Integer)
-    author_id = Column(ForeignKey("authors.id"))
-    author = relationship("Author", backref=backref("publications"))
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String, nullable=True)
+    year: Mapped[int] = mapped_column(Integer)
+    author_id: Mapped[int] = mapped_column(ForeignKey("authors.id"))
+    author: Mapped["Author"] = relationship(back_populates="publications")
+    species: Mapped[List["Species"]] = relationship(
+        back_populates="publications", secondary="publications_species", viewonly=True
+    )
+    publications_species: Mapped["PublicationsSpecies"] = relationship(
+        back_populates="publication", viewonly=True
+    )
 
     def __init__(self, year, author):
         self.year = year
         self.author = author
 
     def __repr__(self):
-        return f"<Publication author_id={self.author_id} year={self.year}>"
+        return f"<Publication author={self.author.name} year={self.year}>"

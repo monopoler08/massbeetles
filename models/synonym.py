@@ -1,14 +1,18 @@
-from sqlalchemy import Column, String, Integer, ForeignKey
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy import Integer, String
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import Mapped
+from sqlalchemy.orm import mapped_column
+from sqlalchemy.orm import relationship
 from models.base import Base
 
 
 class Synonym(Base):
     __tablename__ = "synonyms"
-    id = Column(Integer, primary_key=True)
-    name = Column(String)
-    species_id = Column(ForeignKey("species.id"))
-    species = relationship("Species", backref=backref("synonyms"))
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String)
+    species_id: Mapped[int] = mapped_column(ForeignKey("species.id"))
+    species: Mapped["Species"] = relationship(back_populates="synonyms")
 
     def __init__(self, name, species):
         self.name = name

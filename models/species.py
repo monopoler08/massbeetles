@@ -1,16 +1,32 @@
-from sqlalchemy import Column, String, Integer, ForeignKey
-from sqlalchemy_utils import aggregated
-from sqlalchemy.orm import relationship, backref
+from typing import List
+from sqlalchemy import Integer, String
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import Mapped
+from sqlalchemy.orm import mapped_column
+from sqlalchemy.orm import relationship
 from models.base import Base
+from sqlalchemy.ext.hybrid import hybrid_property, hybrid_method
 
 
 class Species(Base):
     __tablename__ = "species"
-    id = Column(Integer, primary_key=True)
-    name = Column(String)
-    notes = Column(String)
-    genus_id = Column(ForeignKey("genera.id"))
-    genus = relationship("Genus", backref=backref("species"))
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String)
+    notes: Mapped[str] = mapped_column(String, nullable=True)
+    genus_id: Mapped[int] = mapped_column(ForeignKey("genera.id"))
+    genus: Mapped["Genus"] = relationship(back_populates="species")
+    publications: Mapped[List["Publication"]] = relationship(
+        back_populates="species", secondary="publications_species", viewonly=True
+    )
+    records: Mapped[List["Record"]] = relationship(back_populates="species")
+    synonyms: Mapped[List["Synonym"]] = relationship(back_populates="species")
+    publications_species: Mapped["PublicationsSpecies"] = relationship(
+        back_populates="species", viewonly=True
+    )
+    common_names: Mapped[List["CommonName"]] = relationship(
+        secondary="common_names_species", back_populates="species", viewonly=True
+    )
 
     def __init__(self, name, genus, notes):
         self.name = name

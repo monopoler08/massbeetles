@@ -1,0 +1,101 @@
+@startuml
+class Author {
+    integer id
+    string name
+}
+class CommonName {
+    integer id
+    string name
+    foreign_key[] Species
+}
+
+class County {
+    integer id
+    string name
+    string abbreviation
+    foreign_key State
+}
+
+class Family {
+    integer id
+    string name
+    foreign_key SuperFamily
+}
+
+class Genus {
+    integer id
+    string name
+    foreign_key Family
+}
+
+class Publication {
+    integer id
+    string name
+    integer year
+    foreign_key Author
+    foreign_key[] Species
+}
+
+class Record {
+    integer id
+    foreign_key Species
+    foreign_key Source
+    foreign_key County
+    foreign_key State
+}
+
+class Source {
+    integer id
+    string abbreviation
+    string person
+    string url
+    string journal
+    string volume
+    foreign_key[] Counties??????
+}
+
+class Species {
+    integer id
+    string name
+    string notes
+    foreign_key Genus
+    foreign_key[] CommonName
+}
+
+class State {
+    integer id
+    string name
+    string abbreviation
+}
+
+class SubOrder
+{
+    integer id
+    string name
+}
+
+class SuperFamily {
+    integer id
+    string name
+    foreign_key SubOrder
+}
+
+class Synonym {
+    integer id
+    string name
+    foreign_key Species
+}
+
+SubOrder <-- SuperFamily
+SuperFamily <-- Family
+Family <-- Genus
+Genus <-- Species
+Record --> Species
+Record --> Source
+Record --> County
+State <-- County
+Species <--> Publication
+Publication --> Author
+Species <--> CommonName
+Species --> Synonym
+@enduml
