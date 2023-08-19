@@ -1,5 +1,5 @@
 from sqlalchemy import select, func, create_engine
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, aliased
 from models.author import Author
 from models.county import County
 from models.family import Family
@@ -19,79 +19,70 @@ import json
 
 engine = create_engine("sqlite:///beetles.db")
 
-csv = pd.read_csv("beetles.csv")
-
-for row in csv[["Species", "Genus"]].drop_duplicates().to_dict("records"):
-    with Session(engine) as session:
-        species = (
-            session.query(Species)
-            .join(Species.genus)
-            .where(Species.name == row["Species"])
-            .where(Genus.name == row["Genus"])
-        ).all()
-        if not species:
-            print(row["Genus"], row["Species"])
-
 with Session(engine) as session:
-    all_species = {x.scientific_name() for x in session.query(Species).all()}
+    #    species_records = (
+    #        session.query(Record)
+    #        .join(Record.species)
+    #        .join(Species.genus)
+    #        .join(Species.common_names, isouter=True)
+    #        .join(Species.synonyms, isouter=True)
+    #        .join(Genus.family)
+    #        .join(Record.source)
+    #        .join(Record.county, isouter=True)
+    #        .order_by(Genus.name, Species.name)
+    #    )
 
-    species_records = (
-        session.query(Record)
-        .join(Record.species)
+    record_county_subq = (
+        select(
+            Record.county_id.label("county_id"), Record.species_id.label("species_id")
+        )
+        .join(Record.source)
+        .join(Record.county, isouter=True)
+        .add_columns(
+            func.json_object(
+                County.abbreviation,
+                func.json_group_array(
+                    func.json_object(
+                        "county_name",
+                        County.name,
+                        "name",
+                        Source.name,
+                        "person",
+                        Source.person,
+                        "year",
+                        Source.year,
+                        "url",
+                        Source.url,
+                        "journal",
+                        Source.journal,
+                        "volume",
+                        Source.volume,
+                    )
+                ),
+            ).label("county_records")
+        )
+        .group_by(Record.species_id, Record.county_id)
+    ).subquery()
+
+    species_query = (
+        select(Species.scientific_name())
+        .join(record_county_subq, record_county_subq.c.species_id == Species.id)
+        .group_by(record_county_subq.c.species_id)
+        .add_columns(
+            ("[" + func.group_concat(record_county_subq.c.county_records) + "]").label(
+                "county_records"
+            )
+        )
         .join(Species.genus)
         .join(Species.common_names, isouter=True)
         .join(Species.synonyms, isouter=True)
-        .join(Genus.family)
-        .join(Record.source)
-        .join(Record.county, isouter=True)
-        .order_by(Genus.name, Species.name)
     )
 
-    species_data = dict()
-    for r in species_records:
-        species = species_data.get(
-            r.species.scientific_name(),
-            {
-                "name": r.species.scientific_name(),
-                "genus": r.species.genus.name,
-                "family": r.species.genus.family.name,
-                "common_names": [cn.name for cn in r.species.common_names],
-                "synonyms": [sn.name for sn in r.species.synonyms],
-                "county_records": dict(),
-            },
-        )
-        if not r.county or r.county.name == "null":
-            county_name = "Statewide"
-        else:
-            county_name = r.county.name
+    for x in session.execute(species_query):
+        print(x)
+#        print(x[0].scientific_name(), json.dumps(json.loads(x[1]), indent=2))
 
-        county_records = species["county_records"].get(county_name, [])
-        county_records.append(
-            {
-                "name": r.source.name,
-                "person": r.source.person,
-                "year": r.source.year,
-                "url": r.source.url,
-                "journal": r.source.journal,
-                "volume": r.source.volume,
-            }
-        )
-        species["county_records"][county_name] = county_records
-        species_data[r.species.scientific_name()] = species
-
-    for s, d in species_data.items():
-        if len(d["county_records"].keys()) > 1:
-            print(s, d["county_records"])
-
-        #    for i in all_species:
-        #        if i not in species_data.keys():
-        #            print(i)
-
-#    mapped_species = {i for i in species_data.keys()}
-
-#    print(len(mapped_species))
-#    print(len(all_species))
-
-#    for i in all_species:
-#        if i not in mapped_species:
-#            print(i)
+#        print(
+#            x.species.scientific_name(),
+#            [cr.keys() for cr in json.loads(x.county_records)],
+#        )

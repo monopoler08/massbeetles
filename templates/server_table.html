@@ -21,34 +21,27 @@
 
 {% block scripts %}
 <script>
-    function countyName(item) {
-        return item.county
-    }
-    function sourceListItem(item) {
-        return [item.name, item.person, item.year, item.url].join(" ")
-    }
-    function sourceList(item) {
-        return item.sources.map(sourceListItem)
-    }
+
     function format(d) {
         // `d` is the original data object for the row
-        var row_table = '<table cellpadding="5" cellspacing="0" border="0" style="padding-left:50px;">' +
+        //'<th style="width:15%">LOCATIONS</th>' +
+        //'<th style="width:25%">SOURCE CODES</th>' +
+        //'<th style="width:60%">SOURCES </th>' +
+        var row_table = '<table cellpadding="5" cellspacing="0" border="0" style="padding-left:50px;width:50%;margin-left:200px">' +
             '<thead>' +
             '<tr>' +
-            '<th>County</th>' +
-            '<th>Source Abbreviation</th>' +
-            '<th>Name</td>' +
-            '<th>URL</th>' +
-            '<th>Year</th>' +
+            '<th style="vertical-align:text-top">LOCATIONS</th>' +
+            '<th style="vertical-align:text-top">SOURCE CODES</th>' +
+            '<th style="vertical-align:text-top">SOURCES </th>' +
             '</tr>' +
             '</thead>';
         for (item of d.county_records) {
             row_table = row_table + '<tr>' +
                 '<td>' + item.county_name + '</td>' +
                 '<td>' + item.name + '</td>' +
-                '<td>' + item.person + '</td>' +
-                '<td>' + item.url + '</td>' +
-                '<td>' + item.year + '</td>' +
+                '<td><a href="' + item.url + '">' + item.long_name + '. ' +
+                item.url + '. ' +
+                item.year + '</a></td>' +
                 '</tr>';
         }
         row_table = row_table + '</table>';
@@ -57,21 +50,20 @@
     $(document).ready(function () {
         var table = $('#data').DataTable({
             ajax: '/api/data',
-            serverSide: true,
+            serverSide: false,
             colReorder: true,
             pageLength: 50,
             dom: 'Bfrtip',
             buttons: [{ extend: 'colvis', text: 'hide/show columns' }],
             columns: [
-                { data: 'family' },
-                { data: 'genus', visible: false },
-                { data: 'scientific_name' },
-                { data: 'common_names', orderable: false },
-                { data: 'sources', visible: false, orderable: false, className: 'dt-sources' },
-                { data: 'counties', visible: true, orderable: false, className: 'dt-sources' },
-                { data: 'synonyms', visible: false, orderable: false },
-                { data: 'notes', visible: false, orderable: false },
-                { data: 'genus', visible: false, orderable: false }
+                { data: 'family', className: 'dt-sources' },
+                { data: 'genus', visible: false, orderable: false, className: 'dt-sources' },
+                { data: 'scientific_name_display', className: 'dt-sources' },
+                { data: 'common_names', orderable: false, className: 'dt-sources' },
+                { data: 'sources', visible: false, orderable: false, className: 'dt-sources', render: function (data, type, row) { return data.join(', ') } },
+                { data: 'counties', visible: true, orderable: false, className: 'dt-sources', render: function (data, type, row) { return data.join(', ') } },
+                { data: 'synonyms', visible: false, orderable: false, className: 'dt-sources' },
+                { data: 'notes', visible: false, orderable: false, className: 'dt-sources' },
             ],
         });
         $('#data tbody').on('click', 'td.dt-sources', function () {

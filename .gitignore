@@ -129,7 +129,8 @@ dmypy.json
 .pyre/
 beetles.db
 beetles.csv
-
 beetles.db.bak
 sources.csv
 .vscode
+*.Identifier
+*.exe

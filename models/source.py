@@ -13,14 +13,16 @@ class Source(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     person: Mapped[str] = mapped_column(String, nullable=True)
     name: Mapped[str] = mapped_column(String)
+    long_name: Mapped[str] = mapped_column(String, nullable=True)
     url: Mapped[str] = mapped_column(String, nullable=True)
     year: Mapped[int] = mapped_column(Integer, nullable=True)
     journal: Mapped[str] = mapped_column(String, nullable=True)
     volume: Mapped[str] = mapped_column(String, nullable=True)
     records: Mapped["Record"] = relationship(back_populates="source")
 
-    def __init__(self, name, year, person, url, journal, volume):
+    def __init__(self, name, long_name, year, person, url, journal, volume):
         self.name = name
+        self.long_name = long_name
         self.year = year
         self.person = person
         self.url = url

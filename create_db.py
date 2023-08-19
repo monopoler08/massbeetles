@@ -40,8 +40,8 @@ counties = {
     )
     for county in County.ma_counties
 }
-counties["null"] = County(name="null", abbreviation="null", state=ma)
-null_county = counties["null"]
+counties["MASS"] = County(name="Massachusetts", abbreviation="MASS", state=ma)
+null_county = counties["MASS"]
 [session.add(county) for county in counties.values()]
 
 # massage the author field and combine author+year for a source
@@ -114,6 +114,7 @@ add_dict_to_session(species)
 sources = {
     source.Abbreviation: Source(
         name=source.Abbreviation,
+        long_name=source.LongName,
         year=source.Date,
         person=source.Author,
         url=source.URL,
@@ -121,7 +122,14 @@ sources = {
         volume=source.Vol,
     )
     for source in list(
-        sources_df.rename(columns={"Vol/Pages": "Vol"}).itertuples(index=False)
+        sources_df.rename(
+            columns={
+                "Source Name": "LongName",
+                "Vol/Pages": "Vol",
+                "URL for display": "URL",
+                "Source Code": "Abbreviation",
+            }
+        ).itertuples(index=False)
     )
 }
 add_dict_to_session(sources)
@@ -139,6 +147,7 @@ for row in df[["Genus", "Species"] + ma_counties].drop_duplicates().to_dict("rec
                                 code.strip(),
                                 Source(
                                     name=code,
+                                    long_name=None,
                                     year=None,
                                     person=None,
                                     url=None,
@@ -154,7 +163,9 @@ for row in df[["Genus", "Species"] + ma_counties].drop_duplicates().to_dict("rec
 
 other_columns = ["MA", "Bugguide", "Tom Murray", "JFO"]
 for row in (
-    df[["Genus", "Species"] + other_columns].drop_duplicates().to_dict("records")
+    df[df[ma_counties].isnull().all(axis=1)][["Genus", "Species"] + other_columns]
+    .drop_duplicates()
+    .to_dict("records")
 ):
     for column in other_columns:
         if str(row[column]) == row[column]:
@@ -166,6 +177,7 @@ for row in (
                                 code.strip(),
                                 Source(
                                     name=code,
+                                    long_name=None,
                                     year=None,
                                     person=None,
                                     url=None,

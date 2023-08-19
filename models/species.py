@@ -43,9 +43,9 @@ class Species(Base):
         else:
             basename = basename + " " + self.name + "</i>"
         author_strings = []
-        for ps in self.publications_species:
-            author_string = f"{ps.publication.author.name} {ps.publication.year}"
-            if not ps.original:
+        for pub in self.publications:
+            author_string = f"{pub.author.name} {pub.year}"
+            if not pub.original:
                 author_string = "(" + author_string + ")"
             author_strings.append(author_string)
 
