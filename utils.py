@@ -80,6 +80,9 @@ def get_all_records(args=None):
         .join(Genus.family)
     )
 
+    sort_species = False
+    sort_genus = False
+    order = []
     if args:
         #                   Source.name.like(f"%{search}%"),
         #                   County.name.like(f"%{search}%"),
@@ -97,7 +100,6 @@ def get_all_records(args=None):
             )
 
         # sorting
-        order = []
         i = 0
         while True:
             col = []
@@ -117,8 +119,11 @@ def get_all_records(args=None):
             if col_name == "scientific_name":
                 col.append(getattr(Genus, "name"))
                 col.append(getattr(Species, "name"))
+                sort_genus = True
+                sort_species = True
             elif col_name == "genus":
                 col.append(getattr(Genus, "name"))
+                sort_genus = True
             elif col_name == "family":
                 col.append(getattr(Family, "name"))
 
@@ -129,8 +134,13 @@ def get_all_records(args=None):
             order.extend(col)
             i += 1
 
-        if order:
-            species_records = species_records.order_by(*order)
+    if not sort_genus:
+        order.append(func.lower(getattr(Genus, "name")))
+
+    if not sort_species:
+        order.append(func.lower(getattr(Species, "name")))
+
+    species_records = species_records.order_by(*order)
 
     data = [
         {
@@ -172,7 +182,10 @@ def get_all_records(args=None):
             row["counties"].sort()
         if row["sources"]:
             row["sources"].sort()
+        # hack, FIXME. Remove duplicates from the query
         if row["county_records"]:
+            temp = [dict(x) for x in {tuple(x.items()) for x in row["county_records"]}]
+            row["county_records"] = temp
             row["county_records"].sort(key=lambda x: x["name"])
             row["county_records"].sort(key=county_sort)
 
@@ -199,5 +212,3 @@ def count_unique_species(args):
             if key not in species_count_by_genus.keys()
         ]
     )
-
-    return base_count + additional_sp_count
